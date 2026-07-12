@@ -1,0 +1,5 @@
+env: "local"
+server:
+  host: "localhost"
+  port: 4567
+  timeout: "10s"
