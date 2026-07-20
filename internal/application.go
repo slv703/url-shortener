@@ -11,16 +11,24 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/slv703/url-shortener/internal/config"
+	"github.com/slv703/url-shortener/internal/handlers"
+	"github.com/slv703/url-shortener/internal/repositories"
 )
 
 type Application struct {
-	config *config.Config
-	logger *slog.Logger
-	server *echo.Echo
+	config       *config.Config
+	logger       *slog.Logger
+	repositories *repositories.Repositories
+	server       *echo.Echo
 }
 
 func NewApplication(cfg *config.Config, logger *slog.Logger) *Application {
-	app := Application{config: cfg, logger: logger, server: setupServer(cfg.Server, logger)}
+	app := Application{
+		config: cfg,
+		logger: logger,
+		repositories: repositories.NewRepositories(logger),
+		server: setupServer(cfg.Server, logger),
+	}
 	app.setupRoutes()
 	return &app
 }
@@ -46,7 +54,10 @@ func (a *Application) Stop() {
 }
 
 func (a *Application) setupRoutes() {
+	urlHandler := handlers.NewURLHandler(a.logger, a.repositories)
+
 	a.server.GET("/hello", a.helloHandler)
+	a.server.GET("/:key", urlHandler.Redirect)
 }
 
 func (a *Application) helloHandler(c echo.Context) error {
